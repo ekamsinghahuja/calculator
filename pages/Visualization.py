@@ -4,13 +4,55 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+csv_file_path = "merged_output.csv"
 st.title("Enhanced ESG Ratings Visualization")
+st.title("Company ESG Data Viewer")
 
-# File path to the CSV
-csv_file_path = "merged.csv"
 
-# Load the CSV file
-@st.cache_data
+
+def load_csv(file_path):
+    try:
+        df = pd.read_csv(file_path)
+        return df
+    except FileNotFoundError:
+        st.error(f"File not found at path: {file_path}")
+        return None
+
+
+df = load_csv(csv_file_path)
+
+if df is not None:
+    required_columns = [
+        "COMPANY_NAME",
+        "IVA_COMPANY_RATING",
+        "ENVIRONMENTAL_PILLAR_SCORE",
+        "GOVERNANCE_PILLAR_SCORE",
+        "SOCIAL_PILLAR_SCORE",
+        "IVA_INDUSTRY",
+        "WEIGHTED_AVERAGE_SCORE"
+    ]
+    missing_columns = [col for col in required_columns if col not in df.columns]
+
+    if missing_columns:
+        st.error(f"The following required columns are missing from the CSV: {', '.join(missing_columns)}")
+    else:
+        df_filtered = df[required_columns]
+        column_mapping = {
+            "IVA_COMPANY_RATING": "IVA COMPANY RATING",
+            "COMPANY_NAME": "COMPANY NAME",
+            "ENVIRONMENTAL_PILLAR_SCORE": "ENVIRONMENTAL SCORE",
+            "GOVERNANCE_PILLAR_SCORE": "GOVERNANCE SCORE",
+            "SOCIAL_PILLAR_SCORE": "SOCIAL SCORE",
+            "IVA_INDUSTRY": "INDUSTRY TYPE",
+            "WEIGHTED_AVERAGE_SCORE":"ESG Score"
+        }
+        df_filtered.rename(columns=column_mapping, inplace=True)
+        st.markdown("### ESG Data Table")
+        st.dataframe(df_filtered, use_container_width=True)
+
+else:
+    st.error("Failed to load the CSV file.")
+
 def load_csv(file_path):
     return pd.read_csv(file_path)
 
@@ -25,11 +67,12 @@ column_mapping = {
     "ENVIRONMENTAL_PILLAR_SCORE": "Environmental Score",
     "SOCIAL_PILLAR_SCORE": "Social Score",
     "GOVERNANCE_PILLAR_SCORE": "Governance Score",
+    "WEIGHTED_AVERAGE_SCORE":"ESG Score"
 }
 df.rename(columns=column_mapping, inplace=True)
 
 
-# Ensure 'Type' exists
+
 if "Type" not in df.columns:
     df["Type"] = "Unknown"
 
@@ -64,72 +107,24 @@ else:
     if company_name:
         st.warning("No matching company found. You can add it below.")
 
-# Add new company if not found
-if company_name and (matching_companies.empty or "selected_company" not in st.session_state):
-    company_type = st.selectbox("Select Company Type", options=types)
-
-    st.markdown("### Enter ESG Scores")
-    environmental_score = st.slider("Environmental Score (0-100)", 0, 100, 50)
-    social_score = st.slider("Social Score (0-100)", 0, 100, 50)
-    governance_score = st.slider("Governance Score (0-100)", 0, 100, 50)
-
-    if st.button("Save New Company"):
-        overall_score = (environmental_score + social_score + governance_score) / 3
-
-        # Calculate ESG Rating
-        def get_esg_rating(score):
-            if score >= 90:
-                return "AAA"
-            elif score >= 80:
-                return "AA"
-            elif score >= 70:
-                return "A"
-            elif score >= 60:
-                return "BBB"
-            elif score >= 50:
-                return "BB"
-            elif score >= 40:
-                return "B"
-            elif score >= 30:
-                return "CCC"
-            else:
-                return "D"
-
-        rating = get_esg_rating(overall_score)
-
-        new_data = {
-            "Company": company_name,
-            "Type": company_type,
-            "Environmental Score": environmental_score,
-            "Social Score": social_score,
-            "Governance Score": governance_score,
-            "Overall Score": overall_score,
-            "Rating": rating,
-        }
-
-        # Append to the CSV file
-        new_df = pd.DataFrame([new_data])
-        new_df.to_csv(csv_file_path, mode="a", header=False, index=False)
-
-        st.success(f"New company '{company_name}' added successfully!")
-        # Reload the dataframe after update
-        df = load_csv(csv_file_path)
-
-# Display Saved Results
-st.markdown("### Saved Results")
-st.dataframe(df)
-
 # Add navigation links with improved styling
 st.markdown("### Graph Navigation")
 st.markdown("""
-<div style="background-color:#f0f0f0; padding:10px; border-radius:5px;">
+<div style= padding:10px; border-radius:5px;">
     <ul style="list-style-type:none; padding-left:0;">
-        <li><a href="#environmental-score-comparison" style="text-decoration:none; color:#007bff;">🌿 Environmental Score Comparison</a></li>
-        <li><a href="#social-score-comparison" style="text-decoration:none; color:#007bff;">🤝 Social Score Comparison</a></li>
-        <li><a href="#governance-score-comparison" style="text-decoration:none; color:#007bff;">🏛️ Governance Score Comparison</a></li>
-        <li><a href="#3d-esg-scatter-plot" style="text-decoration:none; color:#007bff;">📊 3D ESG Scatter Plot</a></li>
-        <li><a href="#radar-chart" style="text-decoration:none; color:#007bff;">📈 Radar Chart</a></li>
-        <li><a href="#heatmap" style="text-decoration:none; color:#007bff;">🔥 Heatmap</a></li>
+        <li><a href="#environmental-score-comparison" style="text-decoration:none; color:#007bff;"> Environmental Score Comparison</a></li>
+        <li><a href="#social-score-comparison" style="text-decoration:none; color:#007bff;"> Social Score Comparison</a></li>
+        <li><a href="#governance-score-comparison" style="text-decoration:none; color:#007bff;">Governance Score Comparison</a></li>
+        <li><a href="#3d-esg-scatter-plot" style="text-decoration:none; color:#007bff;">3D ESG Scatter Plot</a></li>
+        <li><a href="#radar-chart" style="text-decoration:none; color:#007bff;">Radar Chart</a></li>
+        <li><a href="#aa" style="text-decoration:none; color:#007bff;">Enhanced  Environmental vs Social Scores</a></li>
+        <li><a href="#ab" style="text-decoration:none; color:#007bff;">Enhanced Environmental vs Governance Scores</a></li>
+        <li><a href="#ac" style="text-decoration:none; color:#007bff;">Enhanced Social vs Governance Scores</a></li>
+        <li><a href="#ad" style="text-decoration:none; color:#007bff;">Stacked Bar Chart of ESG Scores by Company</a></li>
+        <li><a href="#ae" style="text-decoration:none; color:#007bff;">Histogram of ESG Scores</a></li>
+        <li><a href="#af" style="text-decoration:none; color:#007bff;">ESG Score vs Environmental Score</a></li>
+        <li><a href="#ag" style="text-decoration:none; color:#007bff;">ESG Score vs Social Score</a></li>
+        <li><a href="#ah" style="text-decoration:none; color:#007bff;">ESG Score vs Governance Score</a></li>
     </ul>
 </div>
 """, unsafe_allow_html=True)
@@ -147,7 +142,7 @@ def apply_local_filter(dataframe, filter_label):
 
     return dataframe
 
-# Enhanced Environmental Score Comparison
+
 st.markdown("### Environmental Score Comparison")
 df_env_filtered = apply_local_filter(df, "Environmental Score Comparison")
 if df_env_filtered.empty:
@@ -161,12 +156,12 @@ else:
         title="Environmental Score by Company",
         labels={"Environmental Score": "Environmental Score", "Company": "Company Name"},
         hover_data=["Social Score", "Governance Score"],
-        color_discrete_sequence=px.colors.qualitative.Bold
+        color_discrete_sequence=px.colors.qualitative.Prism
     )
-    fig_env.update_layout(height=700, width=1200, template="plotly_dark")
+    fig_env.update_layout(height=700, width=1000, template="plotly_dark")
     st.plotly_chart(fig_env, use_container_width=False)
 
-# Enhanced Social Score Comparison
+
 st.markdown("### Social Score Comparison")
 df_soc_filtered = apply_local_filter(df, "Social Score Comparison")
 if df_soc_filtered.empty:
@@ -180,12 +175,12 @@ else:
         title="Social Score by Company",
         labels={"Social Score": "Social Score", "Company": "Company Name"},
         hover_data=["Environmental Score", "Governance Score"],
-        color_discrete_sequence=px.colors.sequential.Viridis
+        color_discrete_sequence=px.colors.qualitative.Prism
     )
-    fig_soc.update_layout(height=700, width=1200, template="plotly_white")
+    fig_soc.update_layout(height=700, width=1000, template="plotly_dark")
     st.plotly_chart(fig_soc, use_container_width=False)
 
-# Enhanced Governance Score Comparison
+
 st.markdown("### Governance Score Comparison")
 df_gov_filtered = apply_local_filter(df, "Governance Score Comparison")
 if df_gov_filtered.empty:
@@ -199,9 +194,9 @@ else:
         title="Governance Score by Company",
         labels={"Governance Score": "Governance Score", "Company": "Company Name"},
         hover_data=["Environmental Score", "Social Score"],
-        color_discrete_sequence=px.colors.qualitative.Pastel
+        color_discrete_sequence=px.colors.qualitative.Prism
     )
-    fig_gov.update_layout(height=700, width=1200, template="plotly_dark")
+    fig_gov.update_layout(height=700, width=1000, template="plotly_dark")
     st.plotly_chart(fig_gov, use_container_width=False)
 
 # 3D Scatter Plot for Environmental, Social, and Governance Scores
@@ -221,14 +216,15 @@ else:
         hover_data=["Company"],
         color_discrete_sequence=px.colors.qualitative.Prism
     )
-    fig_3d.update_layout(height=800, width=1200, scene=dict(
+    fig_3d.update_layout(height=700, width=1000,
+        scene=dict(
         xaxis=dict(title="Environmental Score"),
         yaxis=dict(title="Social Score"),
         zaxis=dict(title="Governance Score")
     ))
     st.plotly_chart(fig_3d, use_container_width=False)
 
-# Enhanced Radar Chart for ESG Scores
+st.markdown('<a id="radar-chart"></a>', unsafe_allow_html=True)
 st.markdown("### Radar Chart for ESG Scores")
 df_radar_filtered = apply_local_filter(df, "Radar Chart")
 if df_radar_filtered.empty:
@@ -243,36 +239,19 @@ else:
             name=row["Company"]
         ))
     radar_fig.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        polar=dict(radialaxis=dict(visible=True, range=[0, 10])),
         title="Radar Chart of ESG Scores by Company",
-        height=800,
-        width=1200,
+        height=700, 
+        width=1000,
         template="plotly_dark",
-        showlegend=True
+        showlegend=False,
     )
     st.plotly_chart(radar_fig, use_container_width=False)
 
-# Distribution of Scores by Type
-st.markdown("### Distribution of ESG Scores by Company Type")
-df_distribution_filtered = apply_local_filter(df, "Distribution of ESG Scores")
-if df_distribution_filtered.empty:
-    st.warning("No data available for Distribution of ESG Scores.")
-else:
-    fig_box = px.box(
-        df_distribution_filtered.melt(id_vars=["Company", "Type"], value_vars=["Environmental Score", "Social Score", "Governance Score"],
-                var_name="Score Type", value_name="Score"),
-        x="Score Type",
-        y="Score",
-        color="Type",
-        title="Distribution of ESG Scores by Company Type",
-        labels={"Score": "Score", "Score Type": "Type of Score"},
-        points="all",  # Show individual points
-        color_discrete_sequence=px.colors.qualitative.Safe
-    )
-    fig_box.update_layout(height=700, width=1200, template="plotly_white")
-    st.plotly_chart(fig_box, use_container_width=False)
+
 
 # Environmental vs Social Scores
+st.markdown('<a id="aa"></a>', unsafe_allow_html=True)
 st.markdown("### Enhanced Environmental vs Social Scores")
 df_es_filtered = apply_local_filter(df, "Environmental vs Social Scores")
 if df_es_filtered.empty:
@@ -285,13 +264,14 @@ else:
         color="Type",
         title="Environmental vs Social Scores",
         hover_data=["Company", "Governance Score"],
-        color_discrete_sequence=px.colors.sequential.Plasma
+        color_discrete_sequence=px.colors.qualitative.Prism
     )
     fig_es.update_traces(marker=dict(size=10, opacity=0.8, line=dict(width=1, color="DarkSlateGray")))
-    fig_es.update_layout(height=800, width=1200, template="plotly_white")
+    fig_es.update_layout(height=700, width=1000, template="plotly_dark")
     st.plotly_chart(fig_es, use_container_width=False)
 
-# Environmental vs Governance Scores
+# Enhanced Environmental vs Governance Scores
+st.markdown('<a id="ab"></a>', unsafe_allow_html=True)
 st.markdown("### Enhanced Environmental vs Governance Scores")
 df_eg_filtered = apply_local_filter(df, "Environmental vs Governance Scores")
 if df_eg_filtered.empty:
@@ -304,13 +284,14 @@ else:
         color="Type",
         title="Environmental vs Governance Scores",
         hover_data=["Company", "Social Score"],
-        color_discrete_sequence=px.colors.sequential.Magma
+        color_discrete_sequence=px.colors.qualitative.Prism
     )
     fig_eg.update_traces(marker=dict(size=10, opacity=0.8, line=dict(width=1, color="DarkSlateGray")))
-    fig_eg.update_layout(height=800, width=1200, template="plotly_white")
+    fig_eg.update_layout(height=700, width=1000, template="plotly_white")
     st.plotly_chart(fig_eg, use_container_width=False)
 
 # Social vs Governance Scores
+st.markdown('<a id="ac"></a>', unsafe_allow_html=True)
 st.markdown("### Enhanced Social vs Governance Scores")
 df_sg_filtered = apply_local_filter(df, "Social vs Governance Scores")
 if df_sg_filtered.empty:
@@ -323,47 +304,14 @@ else:
         color="Type",
         title="Social vs Governance Scores",
         hover_data=["Company", "Environmental Score"],
-        color_discrete_sequence=px.colors.sequential.Cividis
+        color_discrete_sequence=px.colors.qualitative.Prism
     )
     fig_sg.update_traces(marker=dict(size=10, opacity=0.8, line=dict(width=1, color="DarkSlateGray")))
-    fig_sg.update_layout(height=800, width=1200, template="plotly_white")
+    fig_sg.update_layout(height=700, width=1000, template="plotly_dark")
     st.plotly_chart(fig_sg, use_container_width=False)
 
-# Heatmap of ESG Scores
-st.markdown("### Heatmap of ESG Scores")
-df_heatmap_filtered = apply_local_filter(df, "Heatmap")
-if df_heatmap_filtered.empty:
-    st.warning("No data available for Heatmap.")
-else:
-    heatmap_data = df_heatmap_filtered.melt(id_vars=["Company"], value_vars=["Environmental Score", "Social Score", "Governance Score"],
-                           var_name="Score Type", value_name="Score")
-    fig_heatmap = px.density_heatmap(
-        heatmap_data,
-        x="Score Type",
-        y="Company",
-        z="Score",
-        color_continuous_scale=px.colors.sequential.Plasma,
-        title="Heatmap of ESG Scores by Company"
-    )
-    fig_heatmap.update_layout(height=800, width=1200, template="plotly_white")
-    st.plotly_chart(fig_heatmap, use_container_width=False)
-
-# Pie Chart of Company Types
-st.markdown("### Distribution of Companies by Type")
-df_pie_filtered = apply_local_filter(df, "Pie Chart of Companies by Type")
-if df_pie_filtered.empty:
-    st.warning("No data available for Pie Chart.")
-else:
-    pie_chart = px.pie(
-        df_pie_filtered,
-        names="Type",
-        title="Distribution of Companies by Type",
-        color_discrete_sequence=px.colors.sequential.RdBu
-    )
-    pie_chart.update_layout(height=700, width=800, template="plotly_white")
-    st.plotly_chart(pie_chart, use_container_width=False)
-
 # Stacked Bar Chart of ESG Scores
+st.markdown('<a id="ad"></a>', unsafe_allow_html=True)
 st.markdown("### Stacked Bar Chart of ESG Scores by Company")
 df_stacked_filtered = apply_local_filter(df, "Stacked Bar Chart")
 if df_stacked_filtered.empty:
@@ -376,12 +324,13 @@ else:
         y="Score",
         color="Score Type",
         title="Stacked Bar Chart of ESG Scores by Company",
-        color_discrete_sequence=px.colors.sequential.Rainbow
+        color_discrete_sequence=px.colors.qualitative.Prism
     )
-    stacked_bar.update_layout(height=800, width=1200, template="plotly_white")
+    stacked_bar.update_layout(height=800, width=1200, template="plotly_dark")
     st.plotly_chart(stacked_bar, use_container_width=False)
 
 # Histogram of ESG Scores
+st.markdown('<a id="ae"></a>', unsafe_allow_html=True)
 st.markdown("### Histogram of ESG Scores")
 df_histogram_filtered = apply_local_filter(df, "Histogram of ESG Scores")
 if df_histogram_filtered.empty:
@@ -394,7 +343,72 @@ else:
         color="Score Type",
         barmode="overlay",
         title="Distribution of ESG Scores",
-        color_discrete_sequence=px.colors.sequential.Viridis
+        color_discrete_sequence=px.colors.qualitative.Prism
     )
-    histogram.update_layout(height=700, width=1200, template="plotly_white")
+    histogram.update_layout(height=700, width=1000, template="plotly_white")
     st.plotly_chart(histogram, use_container_width=False)
+
+
+
+st.markdown('<a id="af"></a>', unsafe_allow_html=True)
+st.markdown("### ESG Score vs Environmental Score")
+df_esg_env_filtered = apply_local_filter(df, "ESG Score vs Environmental Score")
+if df_esg_env_filtered.empty:
+    st.warning("No data available for ESG Score vs Environmental Score.")
+else:
+    fig_esg_env = px.scatter(
+        df_esg_env_filtered,
+        x="Environmental Score",
+        y="ESG Score",
+        color="Type",
+        title="ESG Score vs Environmental Score",
+        labels={"Environmental Score": "Environmental Score", "ESG Score": "ESG Score"},
+        hover_data=["Company", "Social Score", "Governance Score"],
+        color_discrete_sequence=px.colors.qualitative.Prism
+    )
+    fig_esg_env.update_layout(height=700, width=1000, template="plotly_dark")
+    st.plotly_chart(fig_esg_env, use_container_width=False)
+
+st.markdown('<a id="ag"></a>', unsafe_allow_html=True)
+st.markdown("### ESG Score vs Social Score")
+df_esg_social_filtered = apply_local_filter(df, "ESG Score vs Social Score")
+if df_esg_social_filtered.empty:
+    st.warning("No data available for ESG Score vs Social Score.")
+else:
+    fig_esg_social = px.scatter(
+        df_esg_social_filtered,
+        x="Social Score",
+        y="ESG Score",
+        color="Type",
+        title="ESG Score vs Social Score",
+        labels={"Social Score": "Social Score", "ESG Score": "ESG Score"},
+        hover_data=["Company", "Environmental Score", "Governance Score"],
+        color_discrete_sequence=px.colors.qualitative.Prism
+    )
+    fig_esg_social.update_layout(height=700, width=1000, template="plotly_dark")
+    st.plotly_chart(fig_esg_social, use_container_width=False)
+
+
+st.markdown('<a id="ah"></a>', unsafe_allow_html=True)
+st.markdown("### ESG Score vs Governance Score")
+df_esg_gov_filtered = apply_local_filter(df, "ESG Score vs Governance Score")
+if df_esg_gov_filtered.empty:
+    st.warning("No data available for ESG Score vs Governance Score.")
+else:
+    fig_esg_gov = px.scatter(
+        df_esg_gov_filtered,
+        x="Governance Score",
+        y="ESG Score",
+        color="Type",
+        title="ESG Score vs Governance Score",
+        labels={"Governance Score": "Governance Score", "ESG Score": "ESG Score"},
+        hover_data=["Company", "Environmental Score", "Social Score"],
+        color_discrete_sequence=px.colors.qualitative.Prism
+    )
+    fig_esg_gov.update_layout(height=700, width=1000, template="plotly_dark")
+    st.plotly_chart(fig_esg_gov, use_container_width=False)
+
+
+
+
+

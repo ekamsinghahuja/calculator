@@ -2,9 +2,28 @@ import os
 import streamlit as st
 import pandas as pd
 import pickle
+import time
+
+
+rating_mapping = [
+    {"Rating": "A", "Min": 4.1, "Max": 4.8},
+    {"Rating": "AA", "Min": 4.9, "Max": 5.5},
+    {"Rating": "AAA", "Min": 5.6, "Max": 100},
+    {"Rating": "B", "Min": 2.4, "Max": 2.9},
+    {"Rating": "BB", "Min": 3.0, "Max": 3.6},
+    {"Rating": "BBB", "Min": 3.7, "Max": 4.0},
+    {"Rating": "CCC", "Min": 0, "Max": 2.3},
+]
+
+def classify_rating(score):
+    for rating in rating_mapping:
+        if rating["Min"] <= score <= rating["Max"]:
+            return rating["Rating"]
+    return "No Rating"
 
 st.title("ESG Score Calculator and Rating")
-csv_file_path = "merged.csv"
+csv_file_path = "merged_output.csv"
+
 
 @st.cache_resource
 def load_model_and_scaler():
@@ -35,6 +54,7 @@ column_mapping = {
     "ENVIRONMENTAL_PILLAR_SCORE": "Environmental Score",
     "SOCIAL_PILLAR_SCORE": "Social Score",
     "GOVERNANCE_PILLAR_SCORE": "Governance Score",
+    "WEIGHTED_AVERAGE_SCORE":"ESG Score"
 }
 df.rename(columns=column_mapping, inplace=True)
 
@@ -57,30 +77,56 @@ if selected_company:
 
         st.markdown("### Add New Company")
         company_type = st.selectbox("Select Company Type:", options=df["Type"].unique())
-        environmental_score = st.slider("Environmental Score (0-10):", 0, 10, 10)
-        social_score = st.slider("Social Score (0-10):", 0, 10, 10)
-        governance_score = st.slider("Governance Score (0-10):", 0, 10, 10)
-        Industry_Adjusted_Score = st.slider("Industry Adjusted Score (0-10):",0,10,10)
-        Carbon_Emission_Score = st.slider("Carbon Emission Score (0-10):",0,10,10)
+        environmental_score = st.slider("Environmental Score (0.00-10.00):", 0.0, 10.0, 10.0, step=0.01)
+        social_score = st.slider("Social Score (0.00-10.00):", 0.0, 10.0, 10.0, step=0.01)
+        governance_score = st.slider("Governance Score (0.00-10.00):", 0.0, 10.0, 10.0, step=0.01)
+                
 
         if scaler and model:
             # Prepare input for the model
             input_data = [[environmental_score, governance_score, social_score]]
             scaled_data = scaler.transform(input_data)
             prediction = model.predict(scaled_data)[0]
+            predicted_rating = classify_rating(prediction)
 
-            st.success(f"The predicted ESG rating for '{selected_company}' is: {prediction}")
+            st.write(
+                f"""
+                    <div style="
+                        background-color: rgb(16 14 14 / 62%);;
+                        color: #ffffff;
+                        padding: 15px;
+                        border-radius: 10px;
+                        border: 2px solid #ff4b4b;
+                        box-shadow: 2px 2px 10px rgba(255,255,255,0.2);
+                        margin: 20px;
+                    ">
+                        <h3 style="color: #ff4b4b;">🎯 Prediction Result</h3>
+                        <p><strong>Company Name:</strong> <span style="color: #ff4b4b;">{selected_company}</span></p>
+                        <p><strong>Predicted ESG Rating:</strong> <span style="color: #ff4b4b;">{predicted_rating}</span></p>
+                        <p><strong>ESG Score:</strong> <span style="color: #ff5722;">{prediction:.2f}</span></p>
+                    </div>
+                """,
+                unsafe_allow_html=True
+            )
         else:
             st.error("Model and scaler not properly loaded. Cannot predict ESG rating.")
 
-        if st.button("Save New Company"):
-            new_data = {
-                "Company": selected_company,
-                "Type": company_type,
-                "Environmental Score": environmental_score,
-                "Social Score": social_score,
-                "Governance Score": governance_score,
-            }
-            new_df = pd.DataFrame([new_data])
-            new_df.to_csv(csv_file_path, mode="a", header=False, index=False)
-            st.success(f"New company '{selected_company}' added successfully!")
+csv_file_path = "merged_output.csv"
+
+
+if st.button("Save New Company"):
+    new_data = {
+        "IVA_COMPANY_RATING": predicted_rating,
+        "COMPANY_NAME": selected_company,
+        "ENVIRONMENTAL_PILLAR_SCORE": environmental_score,
+        "GOVERNANCE_PILLAR_SCORE": governance_score,
+        "SOCIAL_PILLAR_SCORE": social_score,
+        "IVA_INDUSTRY": company_type,
+        "WEIGHTED_AVERAGE_SCORE":prediction
+    }
+    new_df = pd.DataFrame([new_data])
+    new_df.to_csv(csv_file_path, mode="a", header=False, index=False)
+    st.cache_data.clear()
+    st.success(f"New company '{selected_company}' added successfully!")
+
+st.cache_data.clear()
