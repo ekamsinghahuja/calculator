@@ -125,7 +125,8 @@ st.markdown("""
         <li><a href="#af" style="text-decoration:none; color:#007bff;">ESG Score vs Environmental Score</a></li>
         <li><a href="#ag" style="text-decoration:none; color:#007bff;">ESG Score vs Social Score</a></li>
         <li><a href="#ah" style="text-decoration:none; color:#007bff;">ESG Score vs Governance Score</a></li>
-    </ul>
+        <li><a href="#ai" style="text-decoration:none; color:#007bff;">Companies in a Field with Maximum ESG Value</a></li>
+    
 </div>
 """, unsafe_allow_html=True)
 
@@ -409,6 +410,59 @@ else:
     st.plotly_chart(fig_esg_gov, use_container_width=False)
 
 
+st.markdown('<a id="ai"></a>', unsafe_allow_html=True)
+st.markdown("### Companies in a Field with Maximum ESG Value")
+
+
+selected_field = st.selectbox("Select Industry/Field", df["Type"].unique(), key="field_select")
+
+
+num_companies = st.number_input(
+    "Number of companies to display",
+    min_value=1,  # Minimum value for input
+    value=5,  # Default value
+    step=1,  # Increment step
+    key="num_companies_input"  # Add a unique key for this widget
+)
 
 
 
+
+# Filter and sort the data by the selected field and ESG Score
+df_sorted_field = df[df["Type"] == selected_field].sort_values(by="ESG Score", ascending=False)
+
+# Display a warning if no data is available
+if df_sorted_field.empty:
+    st.warning(f"No data available for the field: {selected_field}.")
+else:
+    # Get the top companies based on user input or available data
+    companies_to_plot = df_sorted_field.head(num_companies)
+
+    # Inform the user if fewer companies are being plotted
+    if len(companies_to_plot) < num_companies:
+        st.info(f"Only {len(companies_to_plot)} companies are available in the selected field.")
+
+    # Create a Plotly bar plot
+    fig_bar = px.bar(
+        companies_to_plot,
+        x="Company",
+        y="ESG Score",
+        color="Company",
+        title=f"Top {len(companies_to_plot)} Companies in {selected_field} by ESG Score",
+        labels={"ESG Score": "ESG Score", "Company": "Company Name"},
+        hover_data=["Environmental Score", "Social Score", "Governance Score"],
+        color_discrete_sequence=px.colors.qualitative.Prism
+    )
+
+    # Customize the layout
+    fig_bar.update_layout(
+        height=700,
+        width=1000,
+        template="plotly_dark",
+        showlegend=False,
+        xaxis_title="Company",
+        yaxis_title="ESG Score"
+    )
+
+    # Display the plot
+    st.plotly_chart(fig_bar, use_container_width=False)
