@@ -89,9 +89,64 @@ if global_company_filter:
 if global_type_filter:
     df = df[df["Type"].isin(global_type_filter)]
 
-# User input for company details
+
 st.markdown("### Enter Company Details")
 company_name = st.text_input("Search Company Name", value="", placeholder="Enter the company name")
+
+def display_key_insights(data, label):
+    if data.empty:
+        st.warning(f"No data available for {label} insights.")
+        return
+ 
+  
+    top_company = data.loc[data["ESG Score"].idxmax(), "Company"]
+    top_score = data["ESG Score"].max()
+ 
+    
+    avg_env = data["Environmental Score"].mean()
+    avg_soc = data["Social Score"].mean()
+    avg_gov = data["Governance Score"].mean()
+    median_env = data["Environmental Score"].median()
+    median_soc = data["Social Score"].median()
+    median_gov = data["Governance Score"].median()
+ 
+
+    high_env_count = sum(data["Environmental Score"] > 6)
+    low_env_count = sum(data["Environmental Score"] < 3)
+    high_soc_count = sum(data["Social Score"] > 6)
+    low_soc_count = sum(data["Social Score"] < 3)
+    high_gov_count = sum(data["Governance Score"] > 6)
+    low_gov_count = sum(data["Governance Score"] < 3)
+ 
+  
+    high_performers = sum(data["ESG Score"] > 6)
+    medium_performers = sum((data["ESG Score"] >= 4) & (data["ESG Score"] <= 6))
+    low_performers = sum(data["ESG Score"] < 4)
+ 
+    
+    st.markdown(f"## Key Insights for {label}")
+ 
+    
+    st.info(f"🏆 **Top Performing Company:** {top_company} with an ESG score of {top_score:.2f}")
+ 
+    
+    st.markdown("### 📊 ESG Scores Overview")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("🌿 Environmental (Avg)", f"{avg_env:.2f}", f"Median: {median_env:.2f}")
+    col2.metric("🤝 Social (Avg)", f"{avg_soc:.2f}", f"Median: {median_soc:.2f}")
+    col3.metric("⚖ Governance (Avg)", f"{avg_gov:.2f}", f"Median: {median_gov:.2f}")
+ 
+   
+    st.markdown("### 📈 Performance Distribution")
+    col4, col5, col6 = st.columns(3)
+    col4.metric("🔹 High Performers", high_performers)
+    col5.metric("🟠 Medium Performers", medium_performers)
+    col6.metric("🔻 Low Performers", low_performers)
+ 
+   
+
+display_key_insights(df, "Overall ESG Insights")
+ 
 
 # Dynamically suggest company names in dropdown
 matching_companies = (
