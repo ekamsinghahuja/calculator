@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 # Set up page configuration
 st.set_page_config(
     page_title="SimplicatION",  # New app name
@@ -20,7 +21,7 @@ st.markdown(
 st.image(
     "https://images.unsplash.com/photo-1542831371-d531d36971e6", 
     caption="Sustainability in Action", 
-    use_column_width=True
+    use_container_width=True
 )
 
 # Sidebar Navigation Info
