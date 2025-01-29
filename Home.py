@@ -3,23 +3,22 @@ import streamlit as st
 
 # Set up page configuration
 st.set_page_config(
-    page_title="SimplicatION",  # New app name
+    page_title="Ecologic",  # New app name
     page_icon="🌱",
     layout="wide",
 )
 
 # Title and Welcome Message
-st.title("SimplicatION (simple solutions for sustainability)")
+st.title("Ecologic ")
 st.markdown(
     """
     ## A Smarter Way to Measure Sustainability 🌱
-    **EcoImpact Analyzer** is your one-stop platform for calculating and visualizing ESG (Environmental, Social, and Governance) metrics. Whether you're a business owner, an analyst, or just an enthusiast, explore how industries are driving sustainable practices.
     """
 )
 
 # Add a banner image (optional)
 st.image(
-    "https://images.unsplash.com/photo-1542831371-d531d36971e6", 
+    "https://web.cdn.crystalfunds.com/public-web/the-ones/20190301/images/2022/08-august/esg/esg--og.png", 
     caption="Sustainability in Action", 
     use_container_width=True
 )
@@ -30,7 +29,8 @@ st.markdown(
     ### 🌟 Features
     Navigate through the app using the **sidebar**:
     - **📊 ESG Calculator**: Input industrial data to compute your ESG score and monitor your impact.
-    - **📈 Visualization**: Explore detailed trends, comparisons, and insights into ESG metrics across industries.
+    - **📈 Visualization**: Visualize detailed ESG metrics and current scenarios across industries.
+    - **📈 Press Releases**: Explore detailed trends, comparisons, and NEWS into ESG metrics across industries.
     """
 )
 
@@ -43,6 +43,5 @@ st.markdown(
     """
     ---
     💡 **About This App**: Created to inspire sustainable practices through data-driven insights.  
-    🌟 **Credits**: Powered by Python & Streamlit | Developed by [Your Name].  
     """
 )
