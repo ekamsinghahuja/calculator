@@ -302,7 +302,6 @@ def display_results(result):
         'Probability': result["sentiment_probs"] * 100  # Convert to percentage
     })
     prob_df['Probability'] = prob_df['Probability'].round(2)
-   
     # Create a more visually appealing bar chart
     chart = st.bar_chart(
         prob_df.set_index('Sentiment'),
